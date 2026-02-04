@@ -275,10 +275,13 @@ app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         console.error('Session destruction error:', err);
+        return res.status(500).json({ ok: false, error: 'Failed to log out' });
       }
+      return res.json({ ok: true });
     });
+  } else {
+    return res.json({ ok: true });
   }
-  res.json({ ok: true });
 });
 
 // Proxy endpoint - forwards request to real n8n webhook attaching Basic Auth
