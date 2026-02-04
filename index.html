@@ -222,7 +222,7 @@
     fetch('/api/config')
       .then(res => res.json())
       .then(config => {
-        if (config.azureAuthEnabled) {
+        if (config.azureAuthEnabled && microsoftAuthSection) {
           microsoftAuthSection.style.display = 'block';
         }
       })
@@ -231,9 +231,11 @@
       });
 
     // Handle Microsoft Sign In
-    microsoftSigninBtn.addEventListener('click', () => {
-      window.location.href = '/auth/signin';
-    });
+    if (microsoftSigninBtn) {
+      microsoftSigninBtn.addEventListener('click', () => {
+        window.location.href = '/auth/signin';
+      });
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
