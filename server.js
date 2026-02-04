@@ -103,12 +103,45 @@ app.use(express.static(path.join(__dirname)));
 
 // GET /api/config - provide client-side configuration (non-sensitive values only)
 app.get('/api/config', (req, res) => {
+  const feedbackEnabled = !!N8N_FEEDBACK_WEBHOOK_URL;
+
   res.json({
-    feedbackWebhookUrl: N8N_FEEDBACK_WEBHOOK_URL || null,
+    // Expose only a local proxy endpoint to the client, not the actual webhook URL
+    feedbackWebhookUrl: feedbackEnabled ? '/api/feedback' : null,
+    feedbackEnabled,
     azureAuthEnabled: !!(AZURE_CLIENT_ID && AZURE_CLIENT_SECRET),
   });
 });
 
+// POST /api/feedback - server-side proxy to N8N feedback webhook
+app.post('/api/feedback', async (req, res) => {
+  if (!N8N_FEEDBACK_WEBHOOK_URL) {
+    return res.status(503).json({ error: 'Feedback webhook not configured' });
+  }
+
+  try {
+    const response = await fetch(N8N_FEEDBACK_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    // Forward response status and body when possible
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    }
+
+    // If no JSON body, just mirror the status
+    return res.sendStatus(response.status);
+  } catch (error) {
+    console.error('Error forwarding feedback to N8N webhook:', error);
+    return res.status(500).json({ error: 'Failed to submit feedback' });
+  }
+});
 // Microsoft Entra ID OAuth Routes
 // GET /auth/signin - Initiate OAuth flow
 app.get('/auth/signin', async (req, res) => {
