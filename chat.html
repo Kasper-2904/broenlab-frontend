@@ -576,7 +576,7 @@
     function generateMessageId(messageEl) {
       // Generate a stable ID based on message element
       if (!messageEl.dataset.messageId) {
-        messageEl.dataset.messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        messageEl.dataset.messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       }
       return messageEl.dataset.messageId;
     }
